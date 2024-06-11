@@ -1,5 +1,3 @@
-// backend/server.js
-
 import express from "express";
 import cors from "cors";
 import axios from "axios";
@@ -99,6 +97,7 @@ bot.on("message", async (msg) => {
       bot.sendMessage(chatID, message);
     }
   } catch (error) {
+    console.error("Error processing message:", error);
     bot.sendMessage(
       chatID,
       "Sorry, I couldn't retrieve weather information for that location."
@@ -107,7 +106,7 @@ bot.on("message", async (msg) => {
 });
 
 bot.on("polling_error", (error) => {
-  console.log(error); // Print the error
+  console.error("Polling error:", error);
 });
 
 console.log("Bot is running...");
