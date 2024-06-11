@@ -1,19 +1,15 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const { MongoClient } = require("mongodb");
 const TelegramBot = require("node-telegram-bot-api");
-const connectDB = require("./db");
-const itemModel = require("./models/items.js");
-const mongoose = require("mongoose");
+const path = require("path");
 
 const app = express();
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
-const port = 3000;
-
-connectDB();
-
+const port = 6000;
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
@@ -21,56 +17,35 @@ app.listen(port, () => {
 const token = "6519496817:AAEnVupgaP-zLKuc6j8xz3_VWPGJ5d1GFUQ";
 const bot = new TelegramBot(token, { polling: true });
 
-// Function to remove circular references
-const removeCircularReferences = (obj) => {
-  const seen = new WeakSet();
-  return JSON.parse(
-    JSON.stringify(obj, (key, value) => {
-      if (typeof value === "object" && value !== null) {
-        if (seen.has(value)) {
-          return;
-        }
-        seen.add(value);
-      }
-      return value;
-    })
-  );
-};
+const uri = "mongodb://localhost:27017";
+const client = new MongoClient(uri);
 
 async function addToWishlist(chatID, location) {
   try {
-    const database = mongoose.connection.db;
+    await client.connect();
+    const database = client.db("weatherbot");
     const wishlistCollection = database.collection("wishlist");
     await wishlistCollection.updateOne(
       { chatID },
       { $addToSet: { locations: location } },
       { upsert: true }
     );
-  } catch (error) {
-    console.error(error);
+  } finally {
+    await client.close();
   }
 }
 
 async function getWishlist(chatID) {
   try {
-    const database = mongoose.connection.db;
+    await client.connect();
+    const database = client.db("weatherbot");
     const wishlistCollection = database.collection("wishlist");
     const userWishlist = await wishlistCollection.findOne({ chatID });
     return userWishlist ? userWishlist.locations : [];
-  } catch (error) {
-    console.error(error);
-    return [];
+  } finally {
+    await client.close();
   }
 }
-
-app.get("/", async (req, res) => {
-  try {
-    const items = await itemModel.find();
-    res.json(removeCircularReferences(items));
-  } catch (error) {
-    res.status(500).json({ error: "Error fetching items" });
-  }
-});
 
 app.get("/weather", async (req, res) => {
   const { city } = req.query;
@@ -114,12 +89,11 @@ app.get("/wishlist", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("Welcome to nodejs API project");
-});
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, "../client/build")));
 
-app.get("/hello", (req, res) => {
-  res.send("Hello World");
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/build", "index.html"));
 });
 
 bot.on("message", async (msg) => {
