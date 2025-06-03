@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f5f5f5;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.weather-gradient {
+  background: linear-gradient(to right, #74ebd5, #acb6e5);
+}
+
+.weather-gradient-warm {
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+}
+
+.weather-gradient-cold {
+  background: linear-gradient(to right, #7f7fd5, #86a8e7, #91eae4);
+}
